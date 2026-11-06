@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Student</title>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h2>Update Student</h2>
+
+        <form id="updateForm">
+
+            <label for="student_id">Student ID</label>
+            <select id="student_id" required>
+                <option value="">Select Student ID</option>
+            </select>
+
+            <label for="student_name">Student Name</label>
+            <select id="student_name" required>
+                <option value="">Select Student Name</option>
+            </select>
+
+            <label for="total">Total</label>
+            <select id="total" required>
+                <option value="">Select Total</option>
+            </select>
+
+            <label for="age">Age</label>
+            <select id="age" required>
+                <option value="">Select Age</option>
+            </select>
+
+            <label for="phone">Phone</label>
+            <select id="phone" required>
+                <option value="">Select Phone</option>
+            </select>
+
+            <button type="submit">Update Student</button>
+
+        </form>
+
+        <p id="message"></p>
+
+        <a href="/" class="home">Home</a>
+
+    </div>
+
+    <script>
+
+        let students = [];
+
+        // Load all student records
+        async function loadStudents() {
+
+            const message = document.getElementById("message");
+
+            try {
+
+                const response = await fetch("/students");
+
+                if (!response.ok) {
+                    throw new Error("Unable to load students");
+                }
+
+                students = await response.json();
+
+                // Populate all dropdowns
+                fillDropdown("student_id", "student_id", "Select Student ID");
+                fillDropdown("student_name", "student_name", "Select Student Name");
+                fillDropdown("total", "total", "Select Total");
+                fillDropdown("age", "age", "Select Age");
+                fillDropdown("phone", "phone", "Select Phone");
+
+            } catch (error) {
+
+                message.textContent = error.message;
+
+            }
+        }
+
+
+        // Add database values to dropdown
+        function fillDropdown(dropdownId, fieldName, placeholder) {
+
+            const dropdown = document.getElementById(dropdownId);
+
+            dropdown.innerHTML = "";
+
+            const firstOption = document.createElement("option");
+            firstOption.value = "";
+            firstOption.textContent = placeholder;
+
+            dropdown.appendChild(firstOption);
+
+            // Remove duplicate values
+            const values = [
+                ...new Set(
+                    students
+                        .map(student => student[fieldName])
+                        .filter(value => value !== null && value !== undefined)
+                        .map(value => String(value))
+                )
+            ];
+
+            values.forEach(value => {
+
+                const option = document.createElement("option");
+
+                option.value = value;
+                option.textContent = value;
+
+                dropdown.appendChild(option);
+
+            });
+        }
+
+
+        // Select student and display their details
+        document.getElementById("student_id").addEventListener("change", function () {
+
+            const selectedId = this.value;
+
+            const message = document.getElementById("message");
+
+            if (selectedId === "") {
+
+                document.getElementById("updateForm").reset();
+
+                message.textContent = "";
+
+                return;
+            }
+
+            const student = students.find(
+                s => String(s.student_id) === selectedId
+            );
+
+            if (!student) {
+
+                message.textContent = "Student not found";
+
+                return;
+            }
+
+            // Automatically select corresponding values
+            document.getElementById("student_name").value =
+                String(student.student_name ?? "");
+
+            document.getElementById("total").value =
+                String(student.total ?? "");
+
+            document.getElementById("age").value =
+                String(student.age ?? "");
+
+            document.getElementById("phone").value =
+                String(student.phone ?? "");
+
+            message.textContent = "";
+
+        });
+
+
+        // Update student details
+        document.getElementById("updateForm").addEventListener("submit", async function (event) {
+
+            event.preventDefault();
+
+            const id = document.getElementById("student_id").value;
+
+            const message = document.getElementById("message");
+
+            if (id === "") {
+
+                message.textContent = "Please select Student ID";
+
+                return;
+            }
+
+            const updatedStudent = {
+
+                student_name: document.getElementById("student_name").value,
+                total: document.getElementById("total").value,
+                age: document.getElementById("age").value,
+                phone: document.getElementById("phone").value
+
+            };
+
+            try {
+
+                const response = await fetch(
+                    "/students/" + encodeURIComponent(id),
+                    {
+                        method: "PUT",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify(updatedStudent)
+                    }
+                );
+
+                const result = await response.text();
+
+                if (!response.ok) {
+                    throw new Error(result);
+                }
+
+                message.textContent = result;
+
+                // Reload latest student data
+                await loadStudents();
+
+                // Keep the updated student's ID selected
+                document.getElementById("student_id").value = id;
+
+                // Refresh selected student's values
+                const updated = students.find(
+                    s => String(s.student_id) === id
+                );
+
+                if (updated) {
+
+                    document.getElementById("student_name").value =
+                        String(updated.student_name ?? "");
+
+                    document.getElementById("total").value =
+                        String(updated.total ?? "");
+
+                    document.getElementById("age").value =
+                        String(updated.age ?? "");
+
+                    document.getElementById("phone").value =
+                        String(updated.phone ?? "");
+
+                }
+
+            } catch (error) {
+
+                message.textContent = "Error: " + error.message;
+
+            }
+
+        });
+
+
+        // Load dropdowns when page opens
+        loadStudents();
+
+    </script>
+
+</body>
+</html>
+```
